@@ -134,7 +134,7 @@ class ProfileScreen(Screen):
         await info.mount(Static(f"[bold]{user.name}[/bold]", id="username"))
 
         if user.site_url:
-            await info.mount(Static(f"[link={user.site_url}]{user.site_url}[/link]", id="user-meta"))
+            await info.mount(Static(user.site_url, id="user-meta"))
 
         if user.about:
             # Strip HTML from about text
