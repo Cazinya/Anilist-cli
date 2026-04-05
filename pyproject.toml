@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "anilist-cli"
+version = "0.1.0"
+description = "A feature-rich Anilist CLI built with Python Textual and Rich"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = [
+    "textual>=0.70.0",
+    "textual-image>=0.5.0",
+    "httpx[asyncio]>=0.27.0",
+    "click>=8.1.0",
+    "rich>=13.0.0",
+    "Pillow>=10.0.0",
+]
+
+[project.scripts]
+anilist-cli = "anilist_cli.main:cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["anilist_cli*"]
