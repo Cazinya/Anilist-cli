@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 from pathlib import Path
 
@@ -18,8 +17,8 @@ class CoverImage(Widget):
     """
     Displays media cover art.
 
-    Uses textual-image for Kitty/Sixel/Unicode rendering when available.
-    Falls back to a styled placeholder if images are disabled or unsupported.
+    Uses textual-image AutoImage (auto-detects Kitty/Sixel/Unicode half-block)
+    when available. Falls back to a styled text placeholder on any error.
     """
 
     DEFAULT_CSS = """
@@ -33,6 +32,11 @@ class CoverImage(Widget):
         text-align: center;
         content-align: center middle;
         border: tall $panel-lighten-2;
+    }
+    CoverImage AutoImage, CoverImage TGPImage, CoverImage SixelImage,
+    CoverImage HalfcellImage, CoverImage UnicodeImage {
+        width: 100%;
+        height: 100%;
     }
     """
 
@@ -52,57 +56,59 @@ class CoverImage(Widget):
         self._img_width = width
         self._img_height = height
         self._show_images = show_images
+        self.styles.width = width
+        self.styles.height = height
 
     def compose(self) -> ComposeResult:
-        yield Static(
-            self._placeholder_text(),
+        placeholder = Static(
+            self._make_placeholder(),
             classes="placeholder",
             id="cover-placeholder",
         )
+        placeholder.styles.width = self._img_width
+        placeholder.styles.height = self._img_height
+        yield placeholder
 
-    def _placeholder_text(self) -> str:
-        lines = ["╔" + "═" * (self._img_width - 2) + "╗"]
-        mid = self._img_height - 2
-        for i in range(mid):
-            if i == mid // 2 and self._title:
-                text = self._title[: self._img_width - 4]
-                pad = (self._img_width - 2 - len(text)) // 2
-                lines.append("║" + " " * pad + text + " " * (self._img_width - 2 - pad - len(text)) + "║")
-            elif i == mid // 2 + 1:
-                lines.append("║" + " [dim]No Image[/dim] ".center(self._img_width - 2) + "║")
+    def _make_placeholder(self) -> str:
+        w = self._img_width - 2  # inside border
+        h = self._img_height - 2
+        title = (self._title or "No Image")[:w]
+        lines = []
+        for i in range(h):
+            if i == h // 2:
+                lines.append(title.center(w))
             else:
-                lines.append("║" + " " * (self._img_width - 2) + "║")
-        lines.append("╚" + "═" * (self._img_width - 2) + "╝")
+                lines.append("")
         return "\n".join(lines)
 
-    async def on_mount(self) -> None:
+    def on_mount(self) -> None:
         if self._show_images and self._url:
-            self.run_worker(self._load_image(), exclusive=True)
+            self.run_worker(self._load_image(), exclusive=True, name="cover_load")
 
     async def _load_image(self) -> None:
         try:
-            image_path = await self._get_cached_image(self._url)
+            image_path = await self._fetch_cached(self._url)
             if image_path is None:
                 return
             await self._render_image(image_path)
         except Exception:
             pass  # Keep placeholder on any error
 
-    async def _get_cached_image(self, url: str) -> Path | None:
+    async def _fetch_cached(self, url: str) -> Path | None:
         url_hash = hashlib.md5(url.encode()).hexdigest()
-        ext = url.split(".")[-1].split("?")[0].lower()
-        if ext not in ("jpg", "jpeg", "png", "webp", "gif"):
-            ext = "jpg"
-        cache_path = IMAGE_CACHE_DIR / f"{url_hash}.{ext}"
+        suffix = url.split(".")[-1].split("?")[0].lower()
+        if suffix not in ("jpg", "jpeg", "png", "webp", "gif"):
+            suffix = "jpg"
+        cache_path = IMAGE_CACHE_DIR / f"{url_hash}.{suffix}"
 
-        if cache_path.exists():
+        if cache_path.exists() and cache_path.stat().st_size > 0:
             return cache_path
 
         try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                response = await client.get(url, follow_redirects=True)
-                if response.status_code == 200:
-                    IMAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+            IMAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+            async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
+                response = await client.get(url)
+                if response.status_code == 200 and response.content:
                     cache_path.write_bytes(response.content)
                     return cache_path
         except Exception:
@@ -111,17 +117,19 @@ class CoverImage(Widget):
 
     async def _render_image(self, image_path: Path) -> None:
         try:
-            from textual_image.widget import Image as TxImage
+            from textual_image.widget import AutoImage
 
-            placeholder = self.query_one("#cover-placeholder")
-            await placeholder.remove()
+            # Open with PIL first so we can verify the file and control format
+            from PIL import Image as PILImage
+            pil_img = PILImage.open(image_path)
+            pil_img.load()  # Force decode now to catch corrupt files
 
-            img_widget = TxImage(
-                str(image_path),
-                id="cover-img",
-            )
+            img_widget = AutoImage(pil_img, id="cover-img")
             img_widget.styles.width = self._img_width
             img_widget.styles.height = self._img_height
+
+            placeholder = self.query_one("#cover-placeholder", Static)
+            await placeholder.remove()
             await self.mount(img_widget)
-        except (ImportError, Exception):
-            pass  # textual-image not available; keep placeholder
+        except Exception:
+            pass  # Keep placeholder
