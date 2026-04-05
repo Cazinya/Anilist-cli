@@ -8,6 +8,11 @@ from textual.binding import Binding
 from .api.client import AnilistClient
 from .config import Config, load_config
 from .models.user import User
+from .screens.auth import LoginScreen
+from .screens.home import HomeScreen
+from .screens.search import SearchScreen
+from .screens.my_list import MyListScreen
+from .screens.profile import ProfileScreen
 
 
 class AnilistApp(App):
@@ -120,11 +125,11 @@ class AnilistApp(App):
     """
 
     MODES = {
-        "login": "anilist_cli.screens.auth.LoginScreen",
-        "home": "anilist_cli.screens.home.HomeScreen",
-        "search": "anilist_cli.screens.search.SearchScreen",
-        "my_list": "anilist_cli.screens.my_list.MyListScreen",
-        "profile": "anilist_cli.screens.profile.ProfileScreen",
+        "login": LoginScreen,
+        "home": HomeScreen,
+        "search": SearchScreen,
+        "my_list": MyListScreen,
+        "profile": ProfileScreen,
     }
 
     def __init__(self, show_images: bool = True, *args, **kwargs):
