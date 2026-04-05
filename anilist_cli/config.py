@@ -14,7 +14,7 @@ IMAGE_CACHE_DIR = CACHE_DIR / "images"
 # Default AniList client ID for the implicit grant flow.
 # Users should register their own at https://anilist.co/settings/developer
 # and set it via ANILIST_CLIENT_ID environment variable or the config file.
-DEFAULT_CLIENT_ID = "23649"  # public/well-known client id for Anilist CLI apps
+DEFAULT_CLIENT_ID = "38485"  # AnilistTUI client
 
 
 @dataclass
