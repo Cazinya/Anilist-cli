@@ -90,8 +90,7 @@ class LoginScreen(Screen):
             yield Static(
                 "[dim]Requires an AniList API client with redirect URI set to:[/dim]\n"
                 "[bold]https://anilist.co/api/v2/oauth/pin[/bold]\n"
-                "[dim]Register at:[/dim] [link=https://anilist.co/settings/developer]"
-                "https://anilist.co/settings/developer[/link]",
+                "[dim]Register at: https://anilist.co/settings/developer[/dim]",
                 id="setup-note",
             )
             yield Static("Step 1 — Open this URL in your browser to authorize:", id="step-label")
