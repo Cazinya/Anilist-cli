@@ -21,6 +21,7 @@ DEFAULT_CLIENT_ID = "38485"  # AnilistTUI client
 class Config:
     access_token: str = ""
     client_id: str = DEFAULT_CLIENT_ID
+    client_secret: str = ""
     show_images: bool = True
     score_format: str = "POINT_10_DECIMAL"  # POINT_100, POINT_10_DECIMAL, POINT_10, POINT_5, POINT_3, SMILEY
 
