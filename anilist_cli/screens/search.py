@@ -151,7 +151,7 @@ class SearchScreen(Screen):
         self._trigger_search()
 
     def _schedule_debounced_search(self) -> None:
-        if self._debounce_task and not self._debounce_task.done():
+        if self._debounce_task and self._debounce_task.is_running:
             self._debounce_task.cancel()
         self._debounce_task = self.run_worker(
             self._debounce_search(), name="debounce", exclusive=False
