@@ -25,7 +25,7 @@ class LoginScreen(Screen):
         background: $background;
     }
     LoginScreen #login-box {
-        width: 70;
+        width: 76;
         height: auto;
         border: double $accent;
         background: $surface;
@@ -41,6 +41,12 @@ class LoginScreen(Screen):
     LoginScreen #subtitle {
         text-align: center;
         color: $text-muted;
+        margin-bottom: 2;
+    }
+    LoginScreen #setup-note {
+        color: $text-muted;
+        background: $boost;
+        padding: 1 2;
         margin-bottom: 2;
     }
     LoginScreen #step-label {
@@ -79,14 +85,24 @@ class LoginScreen(Screen):
     def compose(self) -> ComposeResult:
         auth_url = build_auth_url(self.app.config.client_id)
         with Static(id="login-box"):
-            yield Static("󰑬  AniList CLI", id="title")
+            yield Static("AniList CLI", id="title")
             yield Static("Connect your AniList account to get started", id="subtitle")
-            yield Static("Step 1 — Open this URL in your browser:", id="step-label")
+            yield Static(
+                "[dim]Requires an AniList API client with redirect URI set to:[/dim]\n"
+                "[bold]https://anilist.co/api/v2/oauth/pin[/bold]\n"
+                "[dim]Register at:[/dim] [link=https://anilist.co/settings/developer]"
+                "https://anilist.co/settings/developer[/link]",
+                id="setup-note",
+            )
+            yield Static("Step 1 — Open this URL in your browser to authorize:", id="step-label")
             yield Static(auth_url, id="auth-url")
-            yield Static("Step 2 — Authorize the app and copy the access token from the URL.", id="token-label")
+            yield Static(
+                "Step 2 — After authorizing, you will be shown your access token.\n"
+                "         Copy it and paste it below.",
+                id="token-label",
+            )
             yield Input(
                 placeholder="Paste your access token here…",
-                password=False,
                 id="token-input",
             )
             yield Static("", id="error-msg")
